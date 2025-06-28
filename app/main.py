@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from chatbot.chatbot import get_chatbot_response
 from chatbot.models import ChatRequest, ChatResponse
-#from chatbotWithTools.+++ import
+from chatbotWithTools.chatWithTools import get_analysis_response
 #from chatbotWithTools.+++ import
 
 app = FastAPI()
@@ -22,6 +22,6 @@ def chat(req: ChatRequest):
 
 @app.post("/chatbottools", response_model=ChatResponse)
 def chat(req: ChatRequest):
-    reply = get_chatbot_response(req.message)
-    #return {"response": reply}
-    return ChatResponse(response=reply)
+    reply = get_analysis_response(req.message)
+    return {"response": reply}
+    #return ChatResponse(response=reply)

@@ -3,3 +3,4 @@ uvicorn==0.34.3
 langchain-google-genai==
 langgraph==0.4.10
 langsmith==0.4.2
+firecrawl==2.12.0
