@@ -1,34 +1,37 @@
 from typing import Dict, Any
 from langgraph.graph import StateGraph, END
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
-from .models import ResearchState, CompanyInfo, CompanyAnalysis
+from .models import ResearchState, CompanyInfo, FinancialAnalysis
 from .firecrawl import FirecrawlService
-from .prompts import DeveloperToolsPrompts
+from .promts import FinancialToolsPrompts
 
 
 class Workflow:
     def __init__(self,llm):
         self.firecrawl = FirecrawlService()
         self.llm = llm
-        self.prompts = DeveloperToolsPrompts()
+        self.prompts = FinancialToolsPrompts()
         self.workflow = self._build_workflow()
 
     def _build_workflow(self):
         graph = StateGraph(ResearchState)
-        graph.add_node("extract_tools", self._extract_tools_step)
-        graph.add_node("research", self._research_step)
-        graph.add_node("analyze", self._analyze_step)
-        graph.set_entry_point("extract_tools")
-        graph.add_edge("extract_tools", "research")
-        graph.add_edge("research", "analyze")
-        graph.add_edge("analyze", END)
+        graph.add_node("extract_financial_tools", self._extract_financial_tools_step)
+        graph.add_node("research_financial_services", self._research_financial_services_step)
+        graph.add_node("analyze_investment_options", self._analyze_investment_options_step)
+        graph.add_node("summarize_results", self._summarize_results_step)
+
+        graph.set_entry_point("extract_financial_tools")
+        graph.add_edge("extract_financial_tools", "research_financial_services")
+        graph.add_edge("research_financial_services", "analyze_investment_options")
+        graph.add_edge("analyze_investment_options", "summarize_results")
+        graph.add_edge("summarize_results", END)
         return graph.compile()
 
-    def _extract_tools_step(self, state: ResearchState) -> Dict[str, Any]:
-        print(f"🔍 Finding articles about: {state.query}")
+    def _extract_financial_tools_step(self, state: ResearchState) -> Dict[str, Any]:
+        print(f"📊 Searching financial articles about: {state.query}")
 
-        article_query = f"{state.query} tools comparison best alternatives"
+        # Enhanced search query for financial content
+        article_query = f"{state.query} financial tools comparison best platforms analysis"
         search_results = self.firecrawl.search_companies(article_query, num_results=3)
 
         all_content = ""
@@ -36,7 +39,7 @@ class Workflow:
             url = result.get("url", "")
             scraped = self.firecrawl.scrape_company_pages(url)
             if scraped:
-                all_content + scraped.markdown[:1500] + "\n\n"
+                all_content += scraped.markdown[:1500] + "\n\n"
 
         messages = [
             SystemMessage(content=self.prompts.TOOL_EXTRACTION_SYSTEM),
@@ -50,56 +53,58 @@ class Workflow:
                 for name in response.content.strip().split("\n")
                 if name.strip()
             ]
-            print(f"Extracted tools: {', '.join(tool_names[:5])}")
+            print(f"💼 Extracted financial tools: {', '.join(tool_names[:5])}")
             return {"extracted_tools": tool_names}
         except Exception as e:
-            print(e)
+            print(f"⚠️ Error extracting tools: {e}")
             return {"extracted_tools": []}
 
-    def _analyze_company_content(self, company_name: str, content: str) -> CompanyAnalysis:
-        structured_llm = self.llm.with_structured_output(CompanyAnalysis)
+    def _analyze_financial_service(self, service_name: str, content: str) -> FinancialAnalysis:
+        structured_llm = self.llm.with_structured_output(FinancialAnalysis)
 
         messages = [
             SystemMessage(content=self.prompts.TOOL_ANALYSIS_SYSTEM),
-            HumanMessage(content=self.prompts.tool_analysis_user(company_name, content))
+            HumanMessage(content=self.prompts.tool_analysis_user(service_name, content))
         ]
 
         try:
             analysis = structured_llm.invoke(messages)
             return analysis
         except Exception as e:
-            print(e)
-            return CompanyAnalysis(
+            print(f"⚠️ Error analyzing {service_name}: {e}")
+            return FinancialAnalysis(
                 pricing_model="Unknown",
-                is_open_source=None,
-                tech_stack=[],
-                description="Failed",
+                is_data_provider=None,
+                financial_metrics=[],
+                description="Analysis failed",
                 api_available=None,
-                language_support=[],
-                integration_capabilities=[],
+                market_coverage=[],
+                integration_platforms=[],
+                real_time_data=None,
             )
 
-
-    def _research_step(self, state: ResearchState) -> Dict[str, Any]:
+    def _research_financial_services_step(self, state: ResearchState) -> Dict[str, Any]:
         extracted_tools = getattr(state, "extracted_tools", [])
 
         if not extracted_tools:
-            print("⚠️ No extracted tools found, falling back to direct search")
-            search_results = self.firecrawl.search_companies(state.query, num_results=4)
+            print("⚠️ No extracted financial tools found, falling back to direct search")
+            # Search for popular financial tools based on query
+            search_results = self.firecrawl.search_companies(f"{state.query} financial data API platform", num_results=4)
             tool_names = [
-                result.get("metadata", {}).get("title", "Unknown")
+                result.get("metadata", {}).get("title", "Unknown Financial Service")
                 for result in search_results.data
             ]
         else:
             tool_names = extracted_tools[:4]
 
-        print(f"🔬 Researching specific tools: {', '.join(tool_names)}")
+        print(f"🔍 Researching financial services: {', '.join(tool_names)}")
 
         companies = []
         for tool_name in tool_names:
-            tool_search_results = self.firecrawl.search_companies(tool_name + " official site", num_results=1)
+            # Search for official website of the financial service
+            tool_search_results = self.firecrawl.search_companies(f"{tool_name} official website financial data", num_results=1)
 
-            if tool_search_results:
+            if tool_search_results and tool_search_results.data:
                 result = tool_search_results.data[0]
                 url = result.get("url", "")
 
@@ -107,32 +112,39 @@ class Workflow:
                     name=tool_name,
                     description=result.get("markdown", ""),
                     website=url,
-                    tech_stack=[],
+                    financial_metrics=[],
                     competitors=[]
                 )
 
+                # Scrape detailed information from the company's website
                 scraped = self.firecrawl.scrape_company_pages(url)
                 if scraped:
                     content = scraped.markdown
-                    analysis = self._analyze_company_content(company.name, content)
+                    analysis = self._analyze_financial_service(company.name, content)
 
+                    # Map analysis results to company info
                     company.pricing_model = analysis.pricing_model
-                    company.is_open_source = analysis.is_open_source
-                    company.tech_stack = analysis.tech_stack
+                    company.is_data_provider = analysis.is_data_provider
+                    company.financial_metrics = analysis.financial_metrics
                     company.description = analysis.description
                     company.api_available = analysis.api_available
-                    company.language_support = analysis.language_support
-                    company.integration_capabilities = analysis.integration_capabilities
+                    company.market_coverage = analysis.market_coverage
+                    company.integration_platforms = analysis.integration_platforms
+                    company.real_time_data = analysis.real_time_data
 
                 companies.append(company)
 
         return {"companies": companies}
 
-    def _analyze_step(self, state: ResearchState) -> Dict[str, Any]:
-        print("Generating recommendations")
+    def _analyze_investment_options_step(self, state: ResearchState) -> Dict[str, Any]:
+        print("📈 Generating financial recommendations...")
 
+        # Prepare company data for analysis
         company_data = ", ".join([
-            company.json() for company in state.companies
+            f"{company.name}: {company.pricing_model} pricing, "
+            f"{'Data Provider' if company.is_data_provider else 'Platform'}, "
+            f"Markets: {', '.join(company.market_coverage[:3])}"
+            for company in state.companies
         ])
 
         messages = [
@@ -140,10 +152,52 @@ class Workflow:
             HumanMessage(content=self.prompts.recommendations_user(state.query, company_data))
         ]
 
-        response = self.llm.invoke(messages)
-        return {"analysis": response.content}
+        try:
+            response = self.llm.invoke(messages)
+            return {"analysis": response.content}
+        except Exception as e:
+            print(f"⚠️ Error generating recommendations: {e}")
+            return {"analysis": "Unable to generate recommendations at this time."}
+    
+    def _summarize_results_step(self, state: ResearchState) -> Dict[str, Any]:
+        """
+        This node takes all the earlier collected data (query, companies, and analysis)
+        and generates a concise summary with the most valuable information.
+        """
+        print("📝 Summarizing the overall data to extract key insights...")
 
-    def run(self, query: str) -> ResearchState:
+        # Gather data that you want to summarize
+        companies_summary = "\n".join([
+            f"- {company.name}: {company.pricing_model} pricing; "
+            f"{'Data Provider' if company.is_data_provider else 'Platform'}; "
+            f"Markets: {', '.join(company.market_coverage[:3])}"
+            for company in state.companies
+        ])
+
+        summary_prompt = (
+            f"Summarize the most valuable insights for the user query.\n\n"
+            f"User Query: {state.query}\n\n"
+            f"Company Details:\n{companies_summary}\n\n"
+            f"Recommendations: {state.analysis}\n\n"
+            "Extract key points that would help a user quickly understand the most relevant information."
+        )
+
+        messages = [
+            SystemMessage(content="You are a helpful financial research assistant that summarizes data into concise key points."),
+            HumanMessage(content=summary_prompt)
+        ]
+
+        try:
+            response = self.llm.invoke(messages)
+            # Return the summarized version in a dedicated field (e.g., 'analysis_summary')
+            return {"analysis_summary": response.content}
+        except Exception as e:
+            print(f"⚠️ Error during summarization: {e}")
+            return {"analysis_summary": "Summary unavailable due to an error."}
+
+
+    def run(self, query: str):
         initial_state = ResearchState(query=query)
         final_state = self.workflow.invoke(initial_state)
-        return ResearchState(**final_state)
+        summary = final_state.get("analysis_summary", "No summary available.")
+        return ResearchState(**final_state) ,summary
