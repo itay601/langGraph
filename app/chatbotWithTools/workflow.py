@@ -2,7 +2,7 @@ from typing import Dict, Any
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import HumanMessage, SystemMessage
 from .models import ResearchState, CompanyInfo, FinancialAnalysis
-from .firecrawl import FirecrawlService
+from utills.firecrawl import FirecrawlService
 from .promts import FinancialToolsPrompts
 
 
@@ -14,17 +14,15 @@ class Workflow:
         self.workflow = self._build_workflow()
 
     def _build_workflow(self):
-        graph = StateGraph(ResearchState)
+        graph = StateGraph(state_schema=ResearchState)
         graph.add_node("extract_financial_tools", self._extract_financial_tools_step)
-        graph.add_node("research_financial_services", self._research_financial_services_step)
-        graph.add_node("analyze_investment_options", self._analyze_investment_options_step)
-        graph.add_node("summarize_results", self._summarize_results_step)
+        graph.add_node("research_financial_services_step", self._research_financial_services_step)
+        graph.add_node("analyze_investment_options_step", self._analyze_investment_options_step)
 
         graph.set_entry_point("extract_financial_tools")
-        graph.add_edge("extract_financial_tools", "research_financial_services")
-        graph.add_edge("research_financial_services", "analyze_investment_options")
-        graph.add_edge("analyze_investment_options", "summarize_results")
-        graph.add_edge("summarize_results", END)
+        graph.add_edge("extract_financial_tools", "research_financial_services_step")
+        graph.add_edge("research_financial_services_step", "analyze_investment_options_step")
+        graph.add_edge("analyze_investment_options_step", END)
         return graph.compile()
 
     def _extract_financial_tools_step(self, state: ResearchState) -> Dict[str, Any]:
@@ -141,10 +139,7 @@ class Workflow:
 
         # Prepare company data for analysis
         company_data = ", ".join([
-            f"{company.name}: {company.pricing_model} pricing, "
-            f"{'Data Provider' if company.is_data_provider else 'Platform'}, "
-            f"Markets: {', '.join(company.market_coverage[:3])}"
-            for company in state.companies
+            company.json()  for company in state.companies
         ])
 
         messages = [
@@ -154,50 +149,15 @@ class Workflow:
 
         try:
             response = self.llm.invoke(messages)
-            return {"analysis": response.content}
+            return {"analysis": response}
         except Exception as e:
             print(f"⚠️ Error generating recommendations: {e}")
             return {"analysis": "Unable to generate recommendations at this time."}
     
-    def _summarize_results_step(self, state: ResearchState) -> Dict[str, Any]:
-        """
-        This node takes all the earlier collected data (query, companies, and analysis)
-        and generates a concise summary with the most valuable information.
-        """
-        print("📝 Summarizing the overall data to extract key insights...")
-
-        # Gather data that you want to summarize
-        companies_summary = "\n".join([
-            f"- {company.name}: {company.pricing_model} pricing; "
-            f"{'Data Provider' if company.is_data_provider else 'Platform'}; "
-            f"Markets: {', '.join(company.market_coverage[:3])}"
-            for company in state.companies
-        ])
-
-        summary_prompt = (
-            f"Summarize the most valuable insights for the user query.\n\n"
-            f"User Query: {state.query}\n\n"
-            f"Company Details:\n{companies_summary}\n\n"
-            f"Recommendations: {state.analysis}\n\n"
-            "Extract key points that would help a user quickly understand the most relevant information."
-        )
-
-        messages = [
-            SystemMessage(content="You are a helpful financial research assistant that summarizes data into concise key points."),
-            HumanMessage(content=summary_prompt)
-        ]
-
-        try:
-            response = self.llm.invoke(messages)
-            # Return the summarized version in a dedicated field (e.g., 'analysis_summary')
-            return {"analysis_summary": response.content}
-        except Exception as e:
-            print(f"⚠️ Error during summarization: {e}")
-            return {"analysis_summary": "Summary unavailable due to an error."}
+    
 
 
     def run(self, query: str):
         initial_state = ResearchState(query=query)
         final_state = self.workflow.invoke(initial_state)
-        summary = final_state.get("analysis_summary", "No summary available.")
-        return ResearchState(**final_state) ,summary
+        return ResearchState(**final_state) 

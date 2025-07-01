@@ -27,7 +27,7 @@ def get_analysis_response(message: str):
     query = (f"Financial Query: {message}").strip()
     #query = row_input("\n📈 Financial Query: ").strip()
     if query:
-        result , summary = workflow.run(query)
+        result = workflow.run(query)
         print(f"\n📊 Financial Analysis for: {query}")
         print("=" * 60)
 
@@ -66,6 +66,6 @@ def get_analysis_response(message: str):
             print("-" * 40)
             print(result.analysis)   
               
-        return summary   
+        return result   
 
 
