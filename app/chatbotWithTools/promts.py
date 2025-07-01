@@ -49,9 +49,9 @@ class FinancialToolsPrompts:
 
                 Focus on investment-relevant features like market data, trading capabilities, portfolio management, and financial analysis tools."""
 
-    # Investment recommendation prompts
-    RECOMMENDATIONS_SYSTEM = """You are a senior financial analyst providing quick, actionable investment tool recommendations. 
-                            Keep responses brief and practical - maximum 3-4 sentences total."""
+    # Investment reviuer prompts
+    RECOMMENDATIONS_SYSTEM = """You are a senior financial analyst providing quick, actionable investment tool recommendationer by risks and apartunities. 
+                            Keep responses brief and practical - maximum 4-5 sentences total."""
 
     @staticmethod
     def recommendations_user(query: str, company_data: str) -> str:
