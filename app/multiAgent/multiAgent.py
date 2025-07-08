@@ -9,7 +9,7 @@ load_dotenv()
 
 
 
-def get_chat_response(message: str):
+def get_chat_response(message: str , economic_term: str ,symbol: str):
     GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"] 
     llm = init_chat_model("google_genai:gemini-2.0-flash-exp",api_key=GOOGLE_API_KEY)
     workflow = Workflow(llm)
@@ -19,7 +19,12 @@ def get_chat_response(message: str):
     query = (f"Financial Query: {message}").strip()
     #query = row_input("\n📈 Financial Query: ").strip()
     if query:
-        state = workflow.workflow.invoke({"messages": [{"role":"user", "content":query}]})
+        state = workflow.workflow.invoke({
+            "messages": [{"role":"user", "content":query}],
+            "economic_term": economic_term,
+            "symbol": symbol
+        })
+
         return state["messages"][-1].content
 
     return None    
