@@ -29,10 +29,6 @@ class FirecrawlService:
             print(f"⚠️ Error searching financial services: {e}")
             return []
 
-    def search_companies(self, query: str, num_results: int = 5):
-        """Generic search method for backward compatibility"""
-        return self.search_financial_services(query, num_results)
-
     def scrape_financial_website(self, url: str):
         """Scrape financial websites for detailed information"""
         try:
@@ -50,16 +46,14 @@ class FirecrawlService:
             print(f"⚠️ Error scraping {url}: {e}")
             return None
 
-    def scrape_company_pages(self, url: str):
-        """Backward compatibility method"""
-        return self.scrape_financial_website(url)
 
-    def search_market_data(self, symbol: str, data_type: str = "stock"):
+
+    def search_market_data(self, query):
         """Search for specific market data about a stock symbol or financial instrument"""
         try:
-            query = f"{symbol} {data_type} price analysis financial data"
+            query2 = f"{query} price analysis financial data"
             result = self.app.search(
-                query=query,
+                query=query2,
                 limit=3,
                 scrape_options=ScrapeOptions(
                     formats=["markdown"]

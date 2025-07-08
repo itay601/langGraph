@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from chatbot.chatbot import get_chatbot_response
-from chatbot.models import ChatRequest, ChatResponse
+from chatbot.models import ChatRequest, ChatResponse , FirecrawlInput
 from chatbotWithTools.chatWithTools import get_analysis_response
 from multiAgent.multiAgent import get_chat_response
 
@@ -30,7 +30,7 @@ def chatWithTools(req: ChatRequest):
     #return ChatResponse(response=reply)
 
 @app.post("/anlasisysAgent", response_model=ChatResponse)
-def multiAgent(req: ChatRequest):
-    reply = get_chat_response(req.message)
+def multiAgent(req: FirecrawlInput):
+    reply = get_chat_response(req.query, req.economic_term, req.symbol)
     return {"response": reply}
        

@@ -5,3 +5,9 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     response: str
+
+
+class FirecrawlInput(BaseModel):
+    query: str  # Example: Search query
+    economic_term: str  # Example: "GDP"
+    symbol: str  # Example: "TSL"
