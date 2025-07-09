@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from chatbot.chatbot import get_chatbot_response
 from chatbot.models import ChatRequest, ChatResponse , FirecrawlInput
-from chatbotWithTools.chatWithTools import get_analysis_response
 from multiAgent.multiAgent import get_chat_response
 
 
@@ -21,13 +20,6 @@ def chat(req: ChatRequest):
     #return {"response": reply}
     return ChatResponse(response=reply)
 
-#not good enough need to think again about Structure of the Agent
-@app.post("/chatbottools", response_model=ChatResponse)
-def chatWithTools(req: ChatRequest):
-    result = get_analysis_response(req.message)
-    analysis_text = result.analysis if hasattr(result, 'analysis') else "No analysis available"
-    return ChatResponse(response=analysis_text)
-    #return ChatResponse(response=reply)
 
 @app.post("/anlasisysAgent", response_model=ChatResponse)
 def multiAgent(req: FirecrawlInput):
