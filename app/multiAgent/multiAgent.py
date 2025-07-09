@@ -25,6 +25,7 @@ def get_chat_response(message: str , economic_term: str ,symbol: str):
             "symbol": symbol
         })
 
+        #return state["messages"][-1].content
         return state["messages"][-1].content
 
     return None    

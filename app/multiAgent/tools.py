@@ -4,19 +4,6 @@ from pydantic import BaseModel
 
 
 
-@tool(description="Fetches the latest economic or stock-related articles.")
-def fetch_articles_2() -> dict:
-    url = "http://127.0.0.1:8000/graphql"
-    payload = {
-        "query": "query { articles { id title content } }"
-    }
-    try:
-        response = requests.post(url, json=payload)
-        response.raise_for_status()
-        return {"data": response.json()}
-    except requests.exceptions.RequestException as e:
-        return {"error": str(e)}
-
 
 @tool(description="Fetches the latest economic or stock-related articles.")
 def fetch_articles(economic_term, symbol) -> dict:
