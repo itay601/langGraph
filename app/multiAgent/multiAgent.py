@@ -15,9 +15,7 @@ def get_chat_response(message: str , economic_term: str ,symbol: str):
     workflow = Workflow(llm)
     print("Economic & Stocks Research Agent")
     print("=" * 40)
-    
     query = (f"Financial Query: {message}").strip()
-    #query = row_input("\n📈 Financial Query: ").strip()
     if query:
         state = workflow.workflow.invoke({
             "messages": [{"role":"user", "content":query}],
