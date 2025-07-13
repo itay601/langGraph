@@ -5,7 +5,7 @@ from utills.firecrawl import FirecrawlService
 #from .promts import FinancialToolsPrompts
 from typing_extensions import TypedDict
 from langgraph.graph.message import add_messages
-from .tools import fetch_articles 
+from .tools import fetch_articles, fetch_arxives
 from langchain_core.tools import tool
 from chatbot.models import FirecrawlInput
 import logging
@@ -33,12 +33,13 @@ class Workflow:
     def _build_workflow(self):
         graph = StateGraph(state_schema=State)
         graph.add_node("chatbot", self._chatbot)
-        graph.add_node("fetch_articles" , fetch_articles) #tool database articles data
-        #graph.add_node("fetch_company_stock_data" , fetch_company_stock_data) #tool (if specific company in data)
-        graph.add_node("firecrawl_search" , self._firecrawl_search) #tool CRAWLING WEBSITES (FIRECRAWL)
+        graph.add_node("fetch_articles" , fetch_articles) 
+        graph.add_node("fetch_arxives" , fetch_arxives) 
+        graph.add_node("firecrawl_search" , self._firecrawl_search) #(FIRECRAWL)
         #graph.set_entry_point("extract_financial_tools")
         graph.add_edge(START , "fetch_articles")
-        graph.add_edge("fetch_articles" , "firecrawl_search")
+        graph.add_edge("fetch_articles", "fetch_arxives")
+        graph.add_edge("fetch_arxives" , "firecrawl_search")
         graph.add_edge("firecrawl_search" , "chatbot")
         graph.add_edge("chatbot", END)
         return graph.compile()
