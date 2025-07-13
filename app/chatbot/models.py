@@ -8,6 +8,14 @@ class ChatResponse(BaseModel):
 
 
 class FirecrawlInput(BaseModel):
-    query: str  # Example: Search query
-    economic_term: str  # Example: "GDP"
-    symbol: str  # Example: "TSL"
+    query: str  
+    economic_term: str
+    symbol: str  
+
+class ChatRequest2(BaseModel):
+    user_id: str
+    message: str
+
+class UserChatHistory(BaseModel):
+    user_id: str
+    queries: list[dict]      
