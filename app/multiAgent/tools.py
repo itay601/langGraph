@@ -35,7 +35,7 @@ class ArxivToAstra:
           return list(results)
     
     # Better Alternative approach more control over the vector search
-    # need to configure vector embeddings for the data for using this matrix
+    # TODO : need to configure vector embeddings for the data for using this matrix
     def search_papers_advanced(self, query=None, limit=10, collection_name="arxiv_papers", similarity_threshold=0.7):
         collection = self.db.get_collection(collection_name)
         
@@ -95,13 +95,11 @@ def fetch_articles(economic_term, symbol) -> dict:
 
 
 @tool
-# This is new! 
 class Question(BaseModel):
     """Question to ask user."""
     content: str        
 
-@tool
-# This is new! 
+@tool 
 class Done(BaseModel):
     """Analysis has been sent to the user."""
     done: bool

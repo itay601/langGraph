@@ -17,11 +17,6 @@ def root():
 def health():
     return {"msg":"server is healthy"}     
 
-#@app.post("/chatbot", response_model=ChatResponse)
-#def chat(req: ChatRequest):
-#    reply = get_chatbot_response(req.message)
-#    return {"response": reply}
-#    return ChatResponse(response=reply)
 
 @app.post("/chatbot", response_model=ChatResponse)
 async def chat(req: ChatRequest2):
@@ -29,7 +24,6 @@ async def chat(req: ChatRequest2):
     ASTRA_TOKEN = os.environ["ASTRA_TOKEN"] 
     ASTRA_ENDPOINT = os.environ["ASTRA_ENDPOINT"] 
 
-    # Initialize the ArXiv to Astra pipeline
     arxiv_store = ArxivToAstra(ASTRA_TOKEN, ASTRA_ENDPOINT)
     collection = arxiv_store.db.get_collection("users_queries_history")
 
@@ -39,33 +33,25 @@ async def chat(req: ChatRequest2):
     if user_history:
         past_queries = user_history.get("queries", [])[-5:]  # Get last 5 queries
     else:
-        # Initialize new user
         collection.insert_one({"user_id": req.user_id, "queries": []})
 
-    # Append past queries to context
     context = "\n".join([q["query"] for q in past_queries])
     enriched_input = f"Context from past queries:\n{context}\n\nCurrent query: {req.message}"
 
-    # Get chatbot response
     reply = get_chatbot_response(enriched_input)
 
-    # Update chat history
     new_query = {"query": req.message, "timestamp": datetime.utcnow().isoformat()}
-    updated_queries = (past_queries + [new_query])[-5:]
+    updated_queries_history = (past_queries + [new_query])[-5:]
 
     collection.update_one(
         {"user_id": req.user_id},
-        {"$set": {"queries": updated_queries}},
+        {"$set": {"queries": updated_queries_history}},
         upsert=True
     )
-
     return ChatResponse(response=reply)
-
-
 
 
 @app.post("/anlasisysAgent", response_model=ChatResponse)
 def multiAgent(req: FirecrawlInput):
     reply = get_chat_response(req.query, req.economic_term, req.symbol)
-    return {"response": reply}
-       
+    return {"response": reply}     
