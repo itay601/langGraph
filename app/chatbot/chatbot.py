@@ -15,7 +15,12 @@ class State(TypedDict):
 graph_builder = StateGraph(State)
 
 GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"] 
+NVIDIA_MODEL_KEY = os.environ["NVIDIA_MODEL_KEY"]
+
 llm = init_chat_model("google_genai:gemini-2.0-flash-exp",api_key=GOOGLE_API_KEY)
+#llm2 = init_chat_model("google_genai:gemini-2.5-flash",api_key=GOOGLE_API_KEY)
+#llm3 = init_chat_model("nvidia/llama-3.1-nemotron-70b-instruct",api_key=NVIDIA_MODEL_KEY)
+
 
 def chatbot(state: State):
     return {"messages": [llm.invoke(state["messages"])]}

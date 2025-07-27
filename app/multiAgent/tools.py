@@ -84,7 +84,7 @@ def fetch_arxives(economic_term):
 
 @tool(description="Fetches the latest economic or stock-related articles.")
 def fetch_articles(economic_term, symbol) -> dict:
-    url = f"http://localhost:8000/v1/api/dataagent?economic_term={economic_term}&symbol={symbol}"
+    url = f"http://129.159.138.109/v1/api/dataagent?economic_term={economic_term}&symbol={symbol}"
     try:
         response = requests.post(url)
         response.raise_for_status()

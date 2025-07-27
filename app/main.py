@@ -54,4 +54,11 @@ async def chat(req: ChatRequest2):
 @app.post("/anlasisysAgent", response_model=ChatResponse)
 def multiAgent(req: FirecrawlInput):
     reply = get_chat_response(req.query, req.economic_term, req.symbol)
-    return {"response": reply}     
+    return {"response": reply}
+
+
+@app.post("/chatbotNvidia", response_model=ChatResponse)
+async def chat(req: ChatRequest2):
+    model_answer = nvidia_model(req.message)        
+    #print(f"\n\nComplete response: {model_answer}")  
+    return ChatResponse(model_answer)
