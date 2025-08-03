@@ -6,19 +6,19 @@ from multiAgent.multiAgent import get_chat_response
 from dotenv import load_dotenv 
 import os
 from datetime import datetime
-
+from nvidiaModel.chatbot import nvidia_model
 app = FastAPI()
 
-@app.get("/")
+@app.get("/chatbot")
 def root():
     return {"msg":"server is running"}    
 
-@app.get("/health")
+@app.get("/chatbot/health")
 def health():
     return {"msg":"server is healthy"}     
 
 
-@app.post("/chatbot", response_model=ChatResponse)
+@app.post("/chatbot/chatbotGemenai", response_model=ChatResponse)
 async def chat(req: ChatRequest2):
     load_dotenv()
     ASTRA_TOKEN = os.environ["ASTRA_TOKEN"] 
@@ -51,14 +51,15 @@ async def chat(req: ChatRequest2):
     return ChatResponse(response=reply)
 
 
-@app.post("/anlasisysAgent", response_model=ChatResponse)
+@app.post("/chatbot/anlasisysAgent", response_model=ChatResponse)
 def multiAgent(req: FirecrawlInput):
     reply = get_chat_response(req.query, req.economic_term, req.symbol)
     return {"response": reply}
 
 
-@app.post("/chatbotNvidia", response_model=ChatResponse)
-async def chat(req: ChatRequest2):
+@app.post("/chatbot/chatbotNvidia", response_model=ChatResponse)
+async def chat(req: ChatRequest):
     model_answer = nvidia_model(req.message)        
     #print(f"\n\nComplete response: {model_answer}")  
-    return ChatResponse(model_answer)
+    #return ChatResponse(model_answer)
+    return {"response": model_answer}
