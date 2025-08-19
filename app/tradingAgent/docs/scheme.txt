@@ -1,0 +1,67 @@
+
+                        🔄 Agent Flow Diagram
+                    ------------------------------------
+
+                            📱 USER AGENT
+                                    |
+                    (preferences: budget, stocks, risk, virtual/live)
+                                    |
+                                    v
+                          🧠 STRATEGY CHOOSER AGENT
+                                    |
+                         (S&P hold, crypto trading, etc.)
+                                    |
+                                    v
+                          ✋ HUMAN APPROVAL AGENT ←─────────┐
+                                    |                      |
+                              (confirm/modify)             |
+                                    |                      |
+                                    v                      |
+    ┌─────────────────────── 📥 DATA INGEST AGENTS ──────┤
+    |                              |                      |
+    |                              v                      |
+    |                    🔍 SENTIMENT AGENTS              |
+    |                              |                      |
+    v                              v                      |
+📊 Polygon API          📰 News/Article Analysis         |
+📱 Reddit PRAW          🌍 Macro Economic Data           |
+🐦 Twitter Database     💭 Social Sentiment Scoring      |
+    |                              |                      |
+    └─────────────┬────────────────┘                     |
+                  |                                       |
+                  v                                       |
+         🎯 SIGNAL/ALPHA AGENTS                          |
+                  |                                       |
+        (technical + sentiment signals)                   |
+                  |                                       |
+                  v                                       |
+        💼 PORTFOLIO MANAGER AGENT                       |
+                  |                                       |
+         (capital allocation, diversification)            |
+                  |                                       |
+                  v                                       |
+         🛡️ RISK MANAGER AGENT                          |
+                  |                                       |
+        (stop-loss, position limits, drawdown)           |
+                  |                                       |
+                  v                                       |
+         ⚡ EXECUTION AGENT                              |
+                  |                                       |
+                  v                                       |
+    ┌─────────────┴─────────────┐                       |
+    |                           |                       |
+    v                           v                       |
+🎮 VIRTUAL BACKTESTER    💰 LIVE BROKER API             |
+    |                           |                       |
+    | (paper trading,           | (Alpaca, IBKR,       |
+    |  historical sim)          |  real orders)        |
+    |                           |                       |
+    └─────────────┬─────────────┘                       |
+                  |                                       |
+                  v                                       |
+        📊 MONITORING/ALERTS AGENT ──────────────────────┘
+                  |
+        (performance tracking, notifications)
+                  |
+                  v
+        📈 Dashboard & Reports
