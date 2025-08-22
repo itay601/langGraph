@@ -4,12 +4,12 @@
 
                             📱 USER AGENT
                                     |
-                    (preferences: budget, stocks, risk, virtual/live)
+                    (preferences: budget, stocks, risk, virtual/live ... and more..)
                                     |
                                     v
-                          🧠 STRATEGY CHOOSER AGENT
+                          🧠 STRATEGY CHOOSER AGENT (if user not allready choose)
                                     |
-                         (S&P hold, crypto trading, etc.)
+                         ('day_trading', 'swing', 'long_term', 'scalping','momentum','mean_reversion','algorithmic')
                                     |
                                     v
                           ✋ HUMAN APPROVAL AGENT ←─────────┐
@@ -25,7 +25,8 @@
     v                              v                      |
 📊 Polygon API          📰 News/Article Analysis         |
 📱 Reddit PRAW          🌍 Macro Economic Data           |
-🐦 Twitter Database     💭 Social Sentiment Scoring      |
+🐦 Twitter Database     💭 Social Sentiment Scoring
+    fireCrawl search   |    crawling internet
     |                              |                      |
     └─────────────┬────────────────┘                     |
                   |                                       |
@@ -65,3 +66,8 @@
                   |
                   v
         📈 Dashboard & Reports
+              |
+              |      
+              |
+              v
+        ↺ Back to Data Ingest (Polygon, Reddit, etc.)-------------------|

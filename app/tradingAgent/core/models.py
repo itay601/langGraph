@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Literal, Optional
 
 class UserPreferences(BaseModel):
@@ -7,7 +7,7 @@ class UserPreferences(BaseModel):
     stocks: List[str]
     risk: Literal['low', 'medium', 'high']
     mode: Literal['virtual', 'live']
-    strategy: Literal['day_trading', 'swing', 'long_term', 'scalping'] = None
+    strategy: Optional[Literal['day_trading','swing', 'long_term', 'scalping','momentum','mean_reversion','algorithmic']] = None
     stop_loss: Optional[float] = Field(None, ge=0, le=100, description="Stop loss percentage per trade")
     take_profit: Optional[float] = Field(None, ge=0, le=100, description="Take profit percentage per trade")
     max_drawdown: Optional[float] = Field(None, ge=0, le=100, description="Maximum acceptable portfolio drawdown")

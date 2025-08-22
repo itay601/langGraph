@@ -8,7 +8,7 @@ import os
 from datetime import datetime
 from nvidiaModel.chatbot import nvidia_model
 from tradingAgent.core.models import UserPreferences
-
+from tradingAgent.main import trading_bot_multi_agents
 
 app = FastAPI()
 
