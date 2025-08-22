@@ -7,6 +7,9 @@ from dotenv import load_dotenv
 import os
 from datetime import datetime
 from nvidiaModel.chatbot import nvidia_model
+from tradingAgent.core.models import UserPreferences
+
+
 app = FastAPI()
 
 @app.get("/chatbot")
@@ -62,4 +65,10 @@ async def chat(req: ChatRequest):
     model_answer = nvidia_model(req.message)        
     #print(f"\n\nComplete response: {model_answer}")  
     #return ChatResponse(model_answer)
+    return {"response": model_answer}
+
+
+@app.post("/chatbot/userTradingAgents", response_model=ChatResponse)
+async def user_trading_bot(req: UserPreferences):
+    model_answer = trading_bot_multi_agents(req)
     return {"response": model_answer}
