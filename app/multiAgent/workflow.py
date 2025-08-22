@@ -94,5 +94,3 @@ class Workflow:
                 content=f"Error during firecrawl search: {str(e)}"
             )
             return {"messages": [error_message]}
-
-    
