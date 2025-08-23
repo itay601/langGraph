@@ -9,6 +9,12 @@ from datetime import datetime
 from nvidiaModel.chatbot import nvidia_model
 from tradingAgent.core.models import UserPreferences
 from tradingAgent.main import trading_bot_multi_agents
+from astrapy import DataAPIClient
+
+
+load_dotenv()
+ASTRA_TOKEN = os.environ["ASTRA_TOKEN"] 
+ASTRA_ENDPOINT = os.environ["ASTRA_ENDPOINT"] 
 
 app = FastAPI()
 
@@ -23,10 +29,6 @@ def health():
 
 @app.post("/chatbot/chatbotGemenai", response_model=ChatResponse)
 async def chat(req: ChatRequest2):
-    load_dotenv()
-    ASTRA_TOKEN = os.environ["ASTRA_TOKEN"] 
-    ASTRA_ENDPOINT = os.environ["ASTRA_ENDPOINT"] 
-
     arxiv_store = ArxivToAstra(ASTRA_TOKEN, ASTRA_ENDPOINT)
     collection = arxiv_store.db.get_collection("users_queries_history")
 
@@ -70,5 +72,13 @@ async def chat(req: ChatRequest):
 
 @app.post("/chatbot/userTradingAgents", response_model=ChatResponse)
 async def user_trading_bot(req: UserPreferences):
-    model_answer = trading_bot_multi_agents(req)
+    try:
+        client = DataAPIClient(ASTRA_TOKEN)
+        db = client.get_database_by_api_endpoint(ASTRA_ENDPOINT)
+        collection = db.get_collection("trading_bot")
+        model_answer = trading_bot_multi_agents(req)
+        collection.insert_one({"user_email": req.user_email, "user_pref": req.dict(), "model_answer": model_answer, "timestamp": datetime.utcnow().isoformat()})
+    except Exception as e:
+        model_answer = f"Error: {e}"
+        print(f"Error: {e}")    
     return {"response": model_answer}

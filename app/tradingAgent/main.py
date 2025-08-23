@@ -22,5 +22,5 @@ def trading_bot_multi_agents(user_prefs: UserPreferences):
             "messages": [{"role": "user", "content": query}],
             "user_preferences": user_prefs.dict()
         })
-        return state["messages"][-1].content
+        return state["messages"][-1].content#, workflow.final_state  
     return None    
