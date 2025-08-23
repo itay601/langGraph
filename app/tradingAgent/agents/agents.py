@@ -34,6 +34,25 @@ class State(TypedDict):
     trade_results: dict
     monitoring_data: dict    
 
+
+initial_state = {
+    "messages": [],
+    "user_preferences": {},
+    "query": "your query here",
+    "economic_term": "",
+    "symbol": "",
+    "strategy": "",
+    "human_approved": False,
+    "market_data": {},
+    "sentiment_data": {},
+    "signals": {},
+    "portfolio_allocation": {},
+    "risk_assessment": {},
+    "execution_plan": {},
+    "trade_results": {},
+    "monitoring_data": {}
+}
+
 class Workflow_tradingAgent:
     def __init__(self, llm, user_prefs, FirecrawlService):
         self.firecrawl = FirecrawlService()
@@ -41,6 +60,7 @@ class Workflow_tradingAgent:
         self.user_prefs = user_prefs
         self.agents = TradingAgents(llm, user_prefs)
         self.workflow = self._build_workflow()
+        #self.final_state = self.workflow(initial_state)
 
     def _build_workflow(self):
         graph = StateGraph(state_schema=State)
@@ -103,7 +123,7 @@ class Workflow_tradingAgent:
         graph.add_edge("live_broker_agent", "monitoring_agent")
         # Final response
         graph.add_edge("monitoring_agent", "chatbot")
-        graph.add_edge("chatbot", "polygon_api_agent")  
+        graph.add_edge("chatbot", END)  
 
         return graph.compile()
 

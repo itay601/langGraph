@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Literal, Optional
 
 class UserPreferences(BaseModel):
+    user_email: str
     query: str
     budget: float
     stocks: List[str]

@@ -1,6 +1,5 @@
 from typing import Dict, Any
 from langchain_core.messages import HumanMessage, SystemMessage
-#from utills.firecrawl import FirecrawlService
 from langchain_core.tools import tool
 from tradingAgent.core.tools import get_ticker_data_poly, get_stock_data_yahoo, get_reddit_vibe, get_related_articles
 import logging
@@ -10,7 +9,7 @@ class TradingAgents:
     def __init__(self, llm, user_prefs):
         self.llm = llm
         self.user_prefs = user_prefs
-        #self.firecrawl = FirecrawlService()
+        
 
     def user_agent(self, state):
         try:

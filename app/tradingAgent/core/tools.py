@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv 
 import yfinance as yf
 from langchain_core.tools import tool 
-import praw
+import asyncpraw #praw
 from astrapy import DataAPIClient
 import time
 
@@ -79,7 +79,7 @@ def get_reddit_vibe(query):
     client_secret = os.getenv("REDDIT_KEY")
     user_agent = "testscript by u/fakebot3"
 
-    reddit = praw.Reddit(
+    reddit = asyncpraw.Reddit(    # change to -- asyncpraw
         client_id=client_id,
         client_secret=client_secret,
         user_agent=user_agent,
@@ -88,7 +88,7 @@ def get_reddit_vibe(query):
     #print(reddit.read_only)
     reddit.read_only = True
     reddit_list = []
-    for submission in reddit.subreddit("all").search(query, sort="top", time_filter="week", limit=100):
+    for submission in reddit.subreddit("all").search(query, sort="top", time_filter="week", limit=5):
         submission.comments.replace_more(limit=0)
         top_comments = sorted(submission.comments, key=lambda c: c.score, reverse=True)
 
