@@ -85,6 +85,23 @@ def serialize_state(state: dict):
                 serialized[k] = v
     return serialized
 
+
+def create_sample_user_preferences():
+    """Create sample user preferences for testing"""
+    return UserPreferences(
+        user_email="test@example.com",
+        query="technology stocks with growth potential",
+        budget=50000.0,
+        risk="medium",
+        mode="virtual",
+        strategy="swing",
+        preferred_markets=["stocks"],
+        stop_loss=10.0,
+        take_profit=25.0,
+        leverage=1.0,
+        trade_frequency="medium"
+    )
+
 @app.post("/chatbot/userTradingAgents", response_model=ChatResponse)
 async def user_trading_bot(req: UserPreferences):
     try:
@@ -95,16 +112,23 @@ async def user_trading_bot(req: UserPreferences):
         if collection.find_one({"user_email": req.user_email}):
             return {"response": "Error: A trading bot session already exists for this email."}
 
-        model_answer, state = trading_bot_multi_agents(req)
+        sample_prefs = create_sample_user_preferences()
+        model_answer, state = trading_bot_multi_agents(sample_prefs)
+        #model_answer, state = trading_bot_multi_agents(req)
         state_serialized = serialize_state(state)  
-        state_serialized.pop("market_data", None)  
-        state_serialized.pop("sentiment_data", None)
-        state_serialized.pop("execution_plan", None)
-        final_full_state = json.dumps(state_serialized, ensure_ascii=False, indent=4)  
         
+        final_full_state = json.dumps(state_serialized, ensure_ascii=False, indent=4)  
+        # Pretty print final results
+        if state.get("final_output"):
+            logging.info("📋 FINAL JSON OUTPUT:")
+            print("📋 FINAL JSON OUTPUT:")
+            print("="*60)
+            logging.info(state["final_output"])
+            print("="*60)
         collection.insert_one({
         "user_email": req.user_email,
-        "state": final_full_state ,
+        "response": message,
+        "state": "final_full_state" ,
         "timestamp": datetime.utcnow().isoformat()
         })
         
@@ -112,3 +136,4 @@ async def user_trading_bot(req: UserPreferences):
         model_answer = f"Error: {e}"
         print(f"Error: {e}")    
     return {"response": model_answer}
+
