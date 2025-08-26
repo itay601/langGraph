@@ -4,12 +4,12 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from utills.firecrawl import FirecrawlService
 from typing_extensions import TypedDict
 from langgraph.graph.message import add_messages
-from tradingAgent.core.tools import get_ticker_data_poly, get_stock_data_yahoo, get_reddit_vibe, get_related_articles
+from tradingAgent.core.tools import get_ticker_data_poly, get_stock_data_yahoo, get_reddit_vibe, get_related_articles,tools_list
 from langchain_core.tools import tool
 from .tradingAgents import TradingAgents
 #from chatbot.models import FirecrawlInput
 import logging
-
+import json
 
 # Configure logging
 logging.basicConfig(
@@ -21,114 +21,38 @@ class State(TypedDict):
     messages: Annotated[list, add_messages]
     user_preferences: dict
     query: str
-    economic_term: str
-    symbol: str
+    symbols: list[str]
     strategy: str
-    human_approved: bool
-    market_data: dict
-    sentiment_data: dict
-    signals: dict
-    portfolio_allocation: dict
-    risk_assessment: dict
     execution_plan: dict
     trade_results: dict
-    monitoring_data: dict    
+    
 
 
-initial_state = {
-    "messages": [],
-    "user_preferences": {},
-    "query": "your query here",
-    "economic_term": "",
-    "symbol": "",
-    "strategy": "",
-    "human_approved": False,
-    "market_data": {},
-    "sentiment_data": {},
-    "signals": {},
-    "portfolio_allocation": {},
-    "risk_assessment": {},
-    "execution_plan": {},
-    "trade_results": {},
-    "monitoring_data": {}
-}
 
 class Workflow_tradingAgent:
     def __init__(self, llm, user_prefs, FirecrawlService):
         self.firecrawl = FirecrawlService()
-        self.llm = llm
+        self.llm = llm.bind_tools(tools_list)
         self.user_prefs = user_prefs
-        self.agents = TradingAgents(llm, user_prefs)
+        self.agents = TradingAgents(self.llm, user_prefs)
         self.workflow = self._build_workflow()
-        #self.final_state = self.workflow(initial_state)
+       
 
     def _build_workflow(self):
         graph = StateGraph(state_schema=State)
         # Add all agent nodes
-        graph.add_node("user_agent", self.agents.user_agent)
-        graph.add_node("strategy_chooser_agent", self.agents.strategy_chooser_agent)
-        graph.add_node("human_approval_agent", self.agents.human_approval_agent)
-        # Data Ingest Agents
-        graph.add_node("polygon_api_agent", self.agents.polygon_api_agent)
-        graph.add_node("reddit_agent", self.agents.reddit_agent)
-        graph.add_node("news_articles_agent", self.agents.news_articles_agent)
-        graph.add_node("firecrawl_agent", self._firecrawl_search)
-        # Sentiment Agents
-        graph.add_node("sentiment_analysis_agent", self.agents.sentiment_analysis_agent)
-        # Signal/Alpha Agents
-        graph.add_node("signal_alpha_agent", self.agents.signal_alpha_agent)
-        # Portfolio Manager Agent
-        graph.add_node("portfolio_manager_agent", self.agents.portfolio_manager_agent)
-        # Risk Manager Agent
-        graph.add_node("risk_manager_agent", self.agents.risk_manager_agent)
-        # Execution Agent
-        graph.add_node("execution_agent", self.agents.execution_agent)
-        # Virtual/Live Trading Agents
-        graph.add_node("virtual_backtester_agent", self.agents.virtual_backtester_agent)
-        graph.add_node("live_broker_agent", self.agents.live_broker_agent)
-        # Monitoring Agent
-        graph.add_node("monitoring_agent", self.agents.monitoring_agent)
-        # Final Response Agent
+        graph.add_node("firecrawl_search", self._firecrawl_search)
         graph.add_node("chatbot", self.agents.chatbot)
-        ##################################################################################
+        graph.add_node("portfolio_llm", self.agents.portfolio_manager_agent)
+        graph.add_node("execution_agent", self.agents.action_executor_agent)
+        
         # Define the workflow edges according to your scheme
-        graph.add_edge(START, "user_agent")
-        graph.add_edge("user_agent", "strategy_chooser_agent")
-        graph.add_edge("strategy_chooser_agent", "human_approval_agent")
-        graph.add_edge("human_approval_agent", "polygon_api_agent")
-        graph.add_edge("polygon_api_agent", "reddit_agent")
-        graph.add_edge("reddit_agent", "news_articles_agent")
-        graph.add_edge("news_articles_agent", "firecrawl_agent")
-        # Sentiment analysis
-        graph.add_edge("firecrawl_agent", "sentiment_analysis_agent")
-        # Signal generation
-        graph.add_edge("sentiment_analysis_agent", "signal_alpha_agent")
-        # Portfolio management
-        graph.add_edge("signal_alpha_agent", "portfolio_manager_agent")
-        # Risk management
-        graph.add_edge("portfolio_manager_agent", "risk_manager_agent")
-        # Execution
-        graph.add_edge("risk_manager_agent", "execution_agent")
-        # Conditional routing based on mode (virtual/live)
-        graph.add_conditional_edges(
-            "execution_agent",
-            self.agents.route_execution_mode,
-            {
-                "virtual": "virtual_backtester_agent",
-                "live": "live_broker_agent"
-            }
-        )
-        # Both paths lead to monitoring
-        graph.add_edge("virtual_backtester_agent", "monitoring_agent")
-        graph.add_edge("live_broker_agent", "monitoring_agent")
-        # Final response
-        graph.add_edge("monitoring_agent", "chatbot")
-        graph.add_edge("chatbot", END)  
-
+        graph.add_edge(START, "chatbot")
+        graph.add_edge("chatbot", "portfolio_llm")
+        graph.add_edge("portfolio_llm", "execution_agent")
+        graph.add_edge("execution_agent", END)
         return graph.compile()
 
-    #def _chatbot(self, state: State):
-    #    return {"messages": [self.llm.invoke(state["messages"])] }
 
     
     #@tool(description="FireCrawl for advance crawling websites related to the economic terms Query")
