@@ -2,72 +2,28 @@
                         🔄 Agent Flow Diagram
                     ------------------------------------
 
-                            📱 USER AGENT
+                                  START
                                     |
-                    (preferences: budget, stocks, risk, virtual/live ... and more..)
+                                    V
+                                Chatbot LLM
                                     |
-                                    v
-                          🧠 STRATEGY CHOOSER AGENT (if user not allready choose)
+                                    |----> TOOL: Stock historical values (5Y)
+                                    |----> TOOL: Sentiment fetcher (Reddit, Twitter, news)
+                                    |----> TOOL: Database (users, portfolios, actions, preferences)
+                                    |----> TOOL: Strategy selector (swing/day/long-term)
                                     |
-                         ('day_trading', 'swing', 'long_term', 'scalping','momentum','mean_reversion','algorithmic')
+                                    V
+                    Portfolio Manager (decision logic)
                                     |
-                                    v
-                          ✋ HUMAN APPROVAL AGENT ←─────────┐
-                                    |                      |
-                              (confirm/modify)             |
-                                    |                      |
-                                    v                      |
-    ┌─────────────────────── 📥 DATA INGEST AGENTS ──────┤
-    |                              |                      |
-    |                              v                      |
-    |                    🔍 SENTIMENT AGENTS              |
-    |                              |                      |
-    v                              v                      |
-📊 Polygon API          📰 News/Article Analysis         |
-📱 Reddit PRAW          🌍 Macro Economic Data           |
-🐦 Twitter Database     💭 Social Sentiment Scoring
-    fireCrawl search   |    crawling internet
-    |                              |                      |
-    └─────────────┬────────────────┘                     |
-                  |                                       |
-                  v                                       |
-         🎯 SIGNAL/ALPHA AGENTS                          |
-                  |                                       |
-        (technical + sentiment signals)                   |
-                  |                                       |
-                  v                                       |
-        💼 PORTFOLIO MANAGER AGENT                       |
-                  |                                       |
-         (capital allocation, diversification)            |
-                  |                                       |
-                  v                                       |
-         🛡️ RISK MANAGER AGENT                          |
-                  |                                       |
-        (stop-loss, position limits, drawdown)           |
-                  |                                       |
-                  v                                       |
-         ⚡ EXECUTION AGENT                              |
-                  |                                       |
-                  v                                       |
-    ┌─────────────┴─────────────┐                       |
-    |                           |                       |
-    v                           v                       |
-🎮 VIRTUAL BACKTESTER    💰 LIVE BROKER API             |
-    |                           |                       |
-    | (paper trading,           | (Alpaca, IBKR,       |
-    |  historical sim)          |  real orders)        |
-    |                           |                       |
-    └─────────────┬─────────────┘                       |
-                  |                                       |
-                  v                                       |
-        📊 MONITORING/ALERTS AGENT ──────────────────────┘
-                  |
-        (performance tracking, notifications)
-                  |
-                  v
-        📈 Dashboard & Reports
-              |
-              |      
-              |
-              v
-        ↺ Back to Data Ingest (Polygon, Reddit, etc.)-------------------|
+                                    |--- Check user preferences (budget, sanctions, etc.)
+                                    |--- Fetch current stock prices
+                                    |--- Compare with last known portfolio state
+                                    |--- Calculate gains/losses
+                                    |--- Apply strategy rules (buy/sell/hold/change allocations)
+                                    |
+                                    V
+                            Action Executor
+                                    |--- Insert plan into DB (actions to take)
+                                    |--- Send summary report to user (email, dashboard, etc.)
+                                    |
+                                   END
