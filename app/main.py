@@ -9,6 +9,7 @@ from datetime import datetime
 from nvidiaModel.chatbot import nvidia_model
 from tradingAgent.core.models import UserPreferences
 from tradingAgent.main import trading_bot_multi_agents
+from tradingAgent_cronjob.main import cronjob_trading_agents 
 from astrapy import DataAPIClient
 from langchain_core.messages import BaseMessage
 import logging
@@ -67,8 +68,6 @@ def multiAgent(req: FirecrawlInput):
 @app.post("/chatbot/chatbotNvidia", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     model_answer = nvidia_model(req.message)        
-    #print(f"\n\nComplete response: {model_answer}")  
-    #return ChatResponse(model_answer)
     return {"response": model_answer}
 
 
@@ -76,31 +75,16 @@ def serialize_state(state: dict):
     serialized = {}
     for k, v in state.items():
         if isinstance(v, list) and all(isinstance(m, BaseMessage) for m in v):
-            serialized[k] = [m.dict() for m in v]  # convert messages
+            serialized[k] = [m.dict() for m in v]  
         else:
             try:
-                _ = v.__dict__  # custom object (like UserPreferences)
+                _ = v.__dict__  
                 serialized[k] = v.__dict__
             except:
                 serialized[k] = v
     return serialized
 
 
-def create_sample_user_preferences():
-    """Create sample user preferences for testing"""
-    return UserPreferences(
-        user_email="test@example.com",
-        query="technology stocks with growth potential",
-        budget=50000.0,
-        risk="medium",
-        mode="virtual",
-        strategy="swing",
-        preferred_markets=["stocks"],
-        stop_loss=10.0,
-        take_profit=25.0,
-        leverage=1.0,
-        trade_frequency="medium"
-    )
 
 @app.post("/chatbot/userTradingAgents", response_model=ChatResponse)
 async def user_trading_bot(req: UserPreferences):
@@ -112,23 +96,14 @@ async def user_trading_bot(req: UserPreferences):
         if collection.find_one({"user_email": req.user_email}):
             return {"response": "Error: A trading bot session already exists for this email."}
 
-        sample_prefs = create_sample_user_preferences()
-        model_answer, state = trading_bot_multi_agents(sample_prefs)
-        #model_answer, state = trading_bot_multi_agents(req)
+        model_answer, state = trading_bot_multi_agents(req)
+
         state_serialized = serialize_state(state)  
-        
         final_full_state = json.dumps(state_serialized, ensure_ascii=False, indent=4)  
-        # Pretty print final results
-        if state.get("final_output"):
-            logging.info("📋 FINAL JSON OUTPUT:")
-            print("📋 FINAL JSON OUTPUT:")
-            print("="*60)
-            logging.info(state["final_output"])
-            print("="*60)
+            
         collection.insert_one({
         "user_email": req.user_email,
-        "response": message,
-        "state": "final_full_state" ,
+        "response": model_answer,
         "timestamp": datetime.utcnow().isoformat()
         })
         
@@ -137,3 +112,21 @@ async def user_trading_bot(req: UserPreferences):
         print(f"Error: {e}")    
     return {"response": model_answer}
 
+
+
+
+
+@app.get("/chatbot/cronTradingAgents", response_model=ChatResponse)
+async def cronjob_trading_bot():
+    try:
+        model_answer, state = cronjob_trading_agents()
+
+        state_serialized = serialize_state(state)  
+        final_full_state = json.dumps(state_serialized, ensure_ascii=False, indent=4)  
+        print(final_full_state)
+        print(model_answer)
+        print(state)
+    except Exception as e:
+        model_answer = f"Error: {e}"
+        print(f"Error: {e}")    
+    return {"response": model_answer}
