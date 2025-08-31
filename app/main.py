@@ -104,6 +104,7 @@ async def user_trading_bot(req: UserPreferences):
         collection.insert_one({
         "user_email": req.user_email,
         "response": model_answer,
+        "user_preferences": req.dict(),
         "timestamp": datetime.utcnow().isoformat()
         })
         
@@ -120,10 +121,9 @@ async def user_trading_bot(req: UserPreferences):
 async def cronjob_trading_bot():
     try:
         model_answer, state = cronjob_trading_agents()
-
-        state_serialized = serialize_state(state)  
-        final_full_state = json.dumps(state_serialized, ensure_ascii=False, indent=4)  
-        print(final_full_state)
+        #state_serialized = serialize_state(state)  
+        #final_full_state = json.dumps(state_serialized, ensure_ascii=False, indent=4)  
+        #print(final_full_state)
         print(model_answer)
         print(state)
     except Exception as e:

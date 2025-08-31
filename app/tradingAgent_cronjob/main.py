@@ -5,7 +5,7 @@ from astrapy import DataAPIClient
 from dotenv import load_dotenv 
 from typing import List, Literal, Optional
 from .workflow import Workflow_tradingAgent
-
+from datetime import datetime
 
 load_dotenv()
 
@@ -44,8 +44,15 @@ def cronjob_trading_agents():
                 "messages": [{"role": "user", "content": query}],
                 "user_preferences": user_prefs
             })
-            
+            invest_analysis = state.get("invest_analysis", {})
+            if invest_analysis:
+                collection.update_one(
+                    {"user_email": user_email},
+                    {"$set": {"invest_analysis": invest_analysis, "timestamp": datetime.utcnow().isoformat()}}
+                )
             return state["messages"][-1].content ,state
         return None    
 
     #return "No users found", None
+
+   

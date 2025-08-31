@@ -9,7 +9,7 @@ import praw
 from astrapy import DataAPIClient
 import time
 import re
-
+import time
 
 # List of stock tickers (deduplicated)
 stocks = list([
@@ -42,9 +42,11 @@ def get_ticker_data_poly(ticker):
         response = requests.get(url)
         response.raise_for_status()  
         data = response.json()
+        time.sleep(1)
         return data
     except requests.exceptions.RequestException as error:
         print(f'Error fetching ticker data: {error}')
+        time.sleep(1)
         return None
 
 @tool(description="fetch latest(current) stock price using polygon.")
@@ -59,13 +61,16 @@ def fetch_stock_price_polygon(symbol: str):
         data = response.json()
         results = data.get("results")
         if not results or len(results) == 0:
+            time.sleep(1)
             return {"error": "No price data found."}
         latest = results[0]
         price = latest.get("c")  # 'c' is the close price
         time_unix = latest.get("t")
         time_str = datetime.fromtimestamp(time_unix / 1000, timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+        time.sleep(1)
         return {"symbol": symbol, "time": time_str, "price": price}
     except requests.exceptions.RequestException as e:
+        time.sleep(1)
         return {"error": str(e)}
 
 
@@ -107,7 +112,7 @@ def get_reddit_vibe(query):
     )
     reddit.read_only = True
     reddit_list = []
-    for submission in reddit.subreddit("all").search(query, sort="top", time_filter="week", limit=5):
+    for submission in reddit.subreddit("all").search(query, sort="top", time_filter="week", limit=3):
         submission.comments.replace_more(limit=0)
         
         top_comments = []
@@ -129,8 +134,6 @@ def get_reddit_vibe(query):
             ],
         }
         reddit_list.append(doc)
-        #collection.insert_one(doc)
-        #print(f"✅ Inserted post '{submission.title}' with {len(doc['comments'])} comments")
     return reddit_list
     
 
@@ -309,6 +312,18 @@ def extract_symbols(response_text):
         return symbols
     except json.JSONDecodeError:
         return []
+
+
+## Purpose
+# ['BTC-ISR', 'USD-BTC'] --> ['BTC', 'USD']
+def extract_symbols_list(comp_list):
+    symbols = []
+    for item in comp_list:
+        parts = item.split("-")
+        if parts:  # make sure it's not empty
+            symbols.append(parts[0].strip())
+    return symbols
+
 
 
 
