@@ -96,10 +96,10 @@ async def user_trading_bot(req: UserPreferences):
         if collection.find_one({"user_email": req.user_email}):
             return {"response": "Error: A trading bot session already exists for this email."}
 
-        model_answer, state = trading_bot_multi_agents(req)
+        model_answer, state , res= trading_bot_multi_agents(req)
 
-        state_serialized = serialize_state(state)  
-        final_full_state = json.dumps(state_serialized, ensure_ascii=False, indent=4)  
+        #state_serialized = serialize_state(state)  
+        #final_full_state = json.dumps(state_serialized, ensure_ascii=False, indent=4)  
             
         collection.insert_one({
         "user_email": req.user_email,
@@ -111,7 +111,7 @@ async def user_trading_bot(req: UserPreferences):
     except Exception as e:
         model_answer = f"Error: {e}"
         print(f"Error: {e}")    
-    return {"response": model_answer}
+    return {"response": res}
 
 
 
