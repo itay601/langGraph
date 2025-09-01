@@ -10,6 +10,7 @@ from astrapy import DataAPIClient
 import time
 import re
 import time
+from typing import Optional, Dict, List
 
 # List of stock tickers (deduplicated)
 stocks = list([
@@ -158,6 +159,91 @@ def get_related_articles(ticker):
 
 
 
+@tool(description="Set user portfolio from AstraDB")
+def build_user_portfolio_from_astra(
+    user_email: str,
+    research_results: Dict,
+):
+    load_dotenv()
+    ASTRA_DB_APPLICATION_TOKEN = os.getenv("ASTRA_TOKEN")
+    ASTRA_DB_API_ENDPOINT = os.getenv("ASTRA_ENDPOINT")
+
+    client = DataAPIClient(ASTRA_DB_APPLICATION_TOKEN)
+    database = client.get_database_by_api_endpoint(ASTRA_DB_API_ENDPOINT)
+    portfolios_collection = database.get_collection("portfolios")
+
+    # Build update fields
+    update_fields = {
+        "user_email": user_email,
+        "ticker": None,
+        "latest_price": None,
+        "yahoo_data": None,
+        "polygon_data": None,
+        "reddit_sentiment": None,
+        "news_articles": None,
+        "date": datetime.utcnow().isoformat()
+    }
+    try:
+        if ticker:
+            update_fields["ticker"] = research_results["ticker"]
+        if latest_price is not None:
+            update_fields["latest_price"] = research_results["latest_price"]
+        if yahoo_data:
+            update_fields["yahoo_data"] =research_results["yahoo_data"] 
+        if polygon_data:
+            update_fields["polygon_data"] =research_results["polygon_data"] 
+        if reddit_sentiment:
+            update_fields["reddit_sentiment"] =research_results["reddit_sentiment"] 
+        if news_articles:
+            update_fields["news_articles"] = research_results["news_articles"]
+        
+
+    
+        # Upsert by (user_email, ticker)
+        filter_query = {"user_email": user_email}
+        if ticker:
+            filter_query["ticker"] = ticker
+
+        # Upsert each field individually to avoid overwriting existing data
+        portfolios_collection.update_one(
+            filter_query,
+            {"$set": {"ticker":update_fields["ticker"]}},
+            upsert=True
+        )
+        portfolios_collection.update_one(
+            filter_query,
+            {"$set": {"latest_price": update_fields["latest_price"]}},
+            upsert=True
+        )
+        portfolios_collection.update_one(
+            filter_query,
+            {"$set": {"yahoo_data": update_fields["yahoo_data"]}},
+            upsert=True
+        )
+        portfolios_collection.update_one(
+            filter_query,
+            {"$set": {"polygon_data": update_fields["polygon_data"]}},
+            upsert=True
+        )
+        portfolios_collection.update_one(
+            filter_query,
+            {"$set": {"reddit_sen": update_fields["reddit_sentiment"]}},
+            upsert=True
+        )
+        portfolios_collection.update_one(
+            filter_query,
+            {"$set": {"news": update_fields["news_articles"]}},
+            upsert=True
+        )
+        portfolios_collection.update_one(
+            filter_query,
+            {"$set": update_fields["date"]},
+            upsert=True
+        )
+        return portfolios_collection.find_one(filter_query)
+
+    except Exception as e:
+        return {"error": str(e)}
 
 @tool(description="Save user portfolio to AstraDB")
 def save_portfolio_to_astra(user_email: str, portfolio_data: dict, trade_results: dict = None):
@@ -234,48 +320,15 @@ def get_user_portfolio_from_astra(user_email: str):
     ASTRA_DB_APPLICATION_TOKEN = os.getenv("ASTRA_TOKEN")
     ASTRA_DB_API_ENDPOINT = os.getenv("ASTRA_ENDPOINT")
 
-    # Initialize DataAPIClient
     client = DataAPIClient(ASTRA_DB_APPLICATION_TOKEN)
     database = client.get_database_by_api_endpoint(ASTRA_DB_API_ENDPOINT)
-
-    # Get collections
-    users_collection = database.get_collection("users")
     portfolios_collection = database.get_collection("portfolios")
-    trades_collection = database.get_collection("trades")
-    """Get user portfolio from AstraDB by email"""
-    try:
-        # Find latest portfolio for user
-        portfolio = portfolios_collection.find_one(
-            {"user_email": user_email, "status": "active"},
-            sort={"created_at": -1}
-        )
-        
-        if portfolio:
-            # Get recent trades
-            recent_trades = list(trades_collection.find(
-                {"user_email": user_email},
-                sort={"timestamp": -1},
-                limit=10
-            ))
-            
-            return {
-                "success": True,
-                "portfolio": portfolio,
-                "recent_trades": recent_trades
-            }
-        else:
-            return {
-                "success": False,
-                "message": f"No portfolio found for user {user_email}"
-            }
-            
-    except Exception as e:
-        print(f"Error getting portfolio from AstraDB: {e}")
-        return {
-            "success": False,
-            "error": str(e)
-        }
-
+    portfolio = portfolios_collection.find_one({"user_email": user_email})
+    if portfolio:
+        return portfolio
+    else:
+        return {"error": "Portfolio not found."}
+    
 
 def extract_symbols(response_text):
     """
@@ -333,6 +386,7 @@ tools_list = [
     get_stock_data_yahoo,
     get_reddit_vibe,
     get_related_articles,
-    save_portfolio_to_astra,
-    get_user_portfolio_from_astra
+    build_user_portfolio_from_astra,
+    get_user_portfolio_from_astra,
+    save_portfolio_to_astra
 ]
