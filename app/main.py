@@ -120,12 +120,8 @@ async def user_trading_bot(req: UserPreferences):
 @app.get("/chatbot/cronTradingAgents", response_model=ChatResponse)
 async def cronjob_trading_bot():
     try:
-        model_answer, state = cronjob_trading_agents()
-        #state_serialized = serialize_state(state)  
-        #final_full_state = json.dumps(state_serialized, ensure_ascii=False, indent=4)  
-        #print(final_full_state)
-        print(model_answer)
-        print(state)
+        state = cronjob_trading_agents()
+        model_answer = "Cronjob trading agents executed."
     except Exception as e:
         model_answer = f"Error: {e}"
         print(f"Error: {e}")    

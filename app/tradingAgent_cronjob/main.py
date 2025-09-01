@@ -50,9 +50,9 @@ def cronjob_trading_agents():
                     {"user_email": user_email},
                     {"$set": {"invest_analysis": invest_analysis, "timestamp": datetime.utcnow().isoformat()}}
                 )
-            return state["messages"][-1].content ,state
-        return None    
-
-    #return "No users found", None
-
-   
+            #data_fetched = state.get("data_fetched", {})
+            #if data_fetched:
+            #    collection.update_one(
+            #        {"user_email": user_email},
+            #        {"$set": {"data_fetched": data_fetched, "timestamp": datetime.utcnow().isoformat()}}
+            #    )   # 
