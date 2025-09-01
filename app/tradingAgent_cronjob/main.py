@@ -6,9 +6,22 @@ from dotenv import load_dotenv
 from typing import List, Literal, Optional
 from .workflow import Workflow_tradingAgent
 from datetime import datetime
+import redis
+import json
+import pandas as pd
+import numpy as np
+from langgraph.pregel.io import AddableValuesDict
+
 
 load_dotenv()
 
+redis_client = redis.Redis(
+    host=os.getenv("REDIS_HOST", "localhost"),
+    port=int(os.getenv("REDIS_PORT", 6379)),
+    password=os.getenv("REDIS_PASSWORD", None),
+    decode_responses=True,  
+    username=os.getenv("REDIS_USERNAME", None)  
+)
 
 def get_user_emails():
     ASTRA_TOKEN = os.environ["ASTRA_TOKEN"]
@@ -28,6 +41,19 @@ def get_user_emails():
         return []
 
 
+def set_state(user_email, state):
+    key = f"user:{user_email}"
+    redis_client.set(key, state)
+    data = redis_client.get(key)
+    return data
+
+def get_state(user_email):
+    key = f"user:{user_email}"
+    data = redis_client.get(key)
+    return json.loads(data) if data else None
+
+
+
 def cronjob_trading_agents():
     GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"] 
     llm = init_chat_model("google_genai:gemini-2.0-flash-exp", api_key=GOOGLE_API_KEY)
@@ -44,15 +70,19 @@ def cronjob_trading_agents():
                 "messages": [{"role": "user", "content": query}],
                 "user_preferences": user_prefs
             })
-            invest_analysis = state.get("invest_analysis", {})
+            invest_analysis = state["invest_analysis"]
             if invest_analysis:
                 collection.update_one(
                     {"user_email": user_email},
                     {"$set": {"invest_analysis": invest_analysis, "timestamp": datetime.utcnow().isoformat()}}
                 )
-            #data_fetched = state.get("data_fetched", {})
-            #if data_fetched:
-            #    collection.update_one(
-            #        {"user_email": user_email},
-            #        {"$set": {"data_fetched": data_fetched, "timestamp": datetime.utcnow().isoformat()}}
-            #    )   # 
+            data_fetched = state["data_fetched"]
+            print(f"Data fetched: {type(state)}")
+            print(f"Data fetched: {type(dict(state))}")
+            redis_data = dict(state)
+            redis_data_str = json.dumps(redis_data, default=str)
+            #print(f"Data fetched: {type(convert_state_for_redis(state))}")
+            if data_fetched:
+                res = set_state(user_email, redis_data_str)
+            get_state(user_email)    
+            return state["messages"][-1].content, state ,res    
