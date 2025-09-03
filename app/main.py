@@ -12,7 +12,6 @@ from tradingAgent.main import trading_bot_multi_agents
 from tradingAgent_cronjob.main import cronjob_trading_agents 
 from astrapy import DataAPIClient
 from langchain_core.messages import BaseMessage
-import logging
 import json
 
 load_dotenv()
@@ -71,19 +70,6 @@ async def chat(req: ChatRequest):
     return {"response": model_answer}
 
 
-def serialize_state(state: dict):
-    serialized = {}
-    for k, v in state.items():
-        if isinstance(v, list) and all(isinstance(m, BaseMessage) for m in v):
-            serialized[k] = [m.dict() for m in v]  
-        else:
-            try:
-                _ = v.__dict__  
-                serialized[k] = v.__dict__
-            except:
-                serialized[k] = v
-    return serialized
-
 
 
 @app.post("/chatbot/userTradingAgents", response_model=ChatResponse)
@@ -96,10 +82,7 @@ async def user_trading_bot(req: UserPreferences):
         if collection.find_one({"user_email": req.user_email}):
             return {"response": "Error: A trading bot session already exists for this email."}
 
-        model_answer, state , res= trading_bot_multi_agents(req)
-
-        #state_serialized = serialize_state(state)  
-        #final_full_state = json.dumps(state_serialized, ensure_ascii=False, indent=4)  
+        model_answer, state = trading_bot_multi_agents(req)
             
         collection.insert_one({
         "user_email": req.user_email,
@@ -111,9 +94,7 @@ async def user_trading_bot(req: UserPreferences):
     except Exception as e:
         model_answer = f"Error: {e}"
         print(f"Error: {e}")    
-    return {"response": res}
-
-
+    return {"response": model_answer}
 
 
 
