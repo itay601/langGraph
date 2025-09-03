@@ -60,29 +60,29 @@ def cronjob_trading_agents():
     user_emails, collection = get_user_emails()
     for user_email in user_emails:
         user_prefs = collection.find_one({"user_email": user_email})
-        #print(f"User Email: {user_email}, Preferences: {user_prefs_scheme}, Type: {type(user_prefs_scheme)}")
-        
-        workflow = Workflow_tradingAgent(llm, user_email, user_prefs)
-        print("Economic & Stocks Trading Agent")
-        query = (f"Financial Query: {user_prefs}").strip()
-        if query:
-            state = workflow.workflow.invoke({
-                "messages": [{"role": "user", "content": query}],
-                "user_preferences": user_prefs
-            })
-            invest_analysis = state["invest_analysis"]
-            if invest_analysis:
-                collection.update_one(
-                    {"user_email": user_email},
-                    {"$set": {"invest_analysis": invest_analysis, "timestamp": datetime.utcnow().isoformat()}}
-                )
-            data_fetched = state["data_fetched"]
-            print(f"Data fetched: {type(state)}")
-            print(f"Data fetched: {type(dict(state))}")
-            redis_data = dict(state)
-            redis_data_str = json.dumps(redis_data, default=str)
-            #print(f"Data fetched: {type(convert_state_for_redis(state))}")
-            if data_fetched:
-                res = set_state(user_email, redis_data_str)
-            get_state(user_email)    
-            return state["messages"][-1].content, state ,res    
+        invest_analysis = user_prefs["invest_analysis"]
+        if invest_analysis == None:    
+            workflow = Workflow_tradingAgent(llm, user_email, user_prefs)
+            print("Economic & Stocks Trading Agent")
+            query = (f"Financial Query: {user_prefs}").strip()
+            if query:
+                state = workflow.workflow.invoke({
+                    "messages": [{"role": "user", "content": query}],
+                    "user_preferences": user_prefs
+                })
+                invest_analysis = state["invest_analysis"]
+                if invest_analysis:
+                    collection.update_one(
+                        {"user_email": user_email},
+                        {"$set": {"invest_analysis": invest_analysis, "timestamp": datetime.utcnow().isoformat()}}
+                    )
+                data_fetched = state["data_fetched"]
+                print(f"Data fetched: {type(state)}")
+                print(f"Data fetched: {type(dict(state))}")
+                redis_data = dict(state)
+                redis_data_str = json.dumps(redis_data, default=str)
+                if data_fetched:
+                    res = set_state(user_email, redis_data_str)
+                get_state(user_email)    
+                #return state["messages"][-1].content, state ,res    
+    return "Cronjob executed successfully"        
